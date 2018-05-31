@@ -3,6 +3,10 @@ with Ada.Unchecked_Conversion;
 with Interfaces.C.Strings;
 
 package C_Strings with Preelaborate is
+   
+   -- Intended use: in calls to C subprograms that expect a pointer to char,
+   --   which -fada-dump-spec translates as Chars_Ptr, do:
+   --   Call_To_C (C_Strings.To_C ("whatever").To_Ptr);
 
    package CS renames Interfaces.C.Strings;
    
