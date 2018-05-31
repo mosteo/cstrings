@@ -10,6 +10,8 @@ package C_Strings with Preelaborate is
    
    type C_String (<>) is tagged limited private;
    
+   function To_Ada (C : C_String) return String;
+   
    function To_C (S : String) return C_String;
    
    function To_Ptr (Str                   : aliased C_String;
@@ -19,13 +21,7 @@ package C_Strings with Preelaborate is
    --    a null will be returned instead of a pointer to null.
    
    function Value (Str : CS.Chars_Ptr) return String renames CS.Value;
-   
--- function To_Ptr (S : String) return CS.Chars_Ptr;
--- This was a bad idea, because the internal instance goes out of scope
---   and the pointer is suddenly dangling (which is somewhat concerning, 
---   because I'd thought that shouldn't compile! No Unchecked_Access is used).
-   
-   
+      
 private
    
    package C  renames Interfaces.C;
@@ -36,6 +32,13 @@ private
    type C_String (Len : C.size_t) is tagged limited record
       Cstr : aliased C.Char_Array (1 .. Len);
    end record;     
+   
+   ------------
+   -- To_Ada --
+   ------------
+
+   function To_Ada (C : C_String) return String is
+      (Interfaces.C.To_Ada (C.Cstr));
    
    ----------
    -- To_C --
