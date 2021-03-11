@@ -18,6 +18,10 @@ package C_Strings with Preelaborate is
 
    function To_C (S : String) return C_String;
 
+   function Unchecked_To_Ptr (Str : access Character) return CS.Chars_Ptr;
+   --  Direct cast. No copy, no nul appended, no nothing! You must know what
+   --  you're doing
+
    function To_Ptr (Str                   : aliased C_String;
                     Null_Instead_Of_Empty :         Boolean := True)
                     return CS.Chars_Ptr;
@@ -77,5 +81,17 @@ private
              (Str.Cstr (Str.Cstr'First)'Unchecked_Access));
    --  This obviously presumes the pointer won't be kept elsewhere.
    --  We shall see if this blows up in our face or what.
+
+   ----------------------
+   -- Unchecked_To_Ptr --
+   ----------------------
+
+   type Ada_Char_Access is access all Character;
+
+   function Ada_Char_To_Chars_Ptr is new
+     Ada.Unchecked_Conversion (Ada_Char_Access, CS.Chars_Ptr);
+
+   function Unchecked_To_Ptr (Str : access Character) return CS.Chars_Ptr
+   is (Ada_Char_To_Chars_Ptr (Str));
 
 end C_Strings;
