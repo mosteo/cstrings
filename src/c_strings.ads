@@ -1,3 +1,4 @@
+private with Ada.Finalization;
 with Ada.Unchecked_Conversion;
 
 with Interfaces.C.Strings;
@@ -7,8 +8,14 @@ package C_Strings with Preelaborate is
    -- Intended use: in calls to C subprograms that expect a pointer to char,
    --   which -fada-dump-spec translates as Chars_Ptr, do:
    --   Call_To_C (C_Strings.To_C ("whatever").To_Ptr);
+   -- The Ada string memory is reused; no allocations are taking place.
+
+   -- There are a few extra subprograms to work in the C -> Ada directions too,
+   --   but those are not the main purpose of the library.
 
    package CS renames Interfaces.C.Strings;
+
+   subtype Chars_Ptr is CS.Chars_Ptr;
 
    Null_Ptr : CS.Chars_Ptr renames CS.Null_Ptr;
 
@@ -28,17 +35,25 @@ package C_Strings with Preelaborate is
    --  Null_Instead_Of_Empty: if Str is an empty string,
    --    a null will be returned instead of a pointer to null.
 
-   function Value (Str : CS.Chars_Ptr) return String renames CS.Value;
+   function Value (Str  : CS.Chars_Ptr;
+                   Free : Boolean := False)
+                   return String;
+   --  Will return "" for either an empty string or a NULL ptr (no string at
+   --  all). If Free, the original Str is freed after being copied
 
 private
+
+   use Ada.Finalization;
 
    package C  renames Interfaces.C;
 
    use all type C.Size_T;
+   use all type CS.Chars_Ptr;
 
    --  Holds a C string
-   type C_String (Len : C.size_t) is tagged limited record
-      Cstr : aliased C.Char_Array (1 .. Len);
+   type C_String (Len : C.size_t) is new Limited_Controlled with record
+      Owned : Boolean;
+      Cstr  : aliased C.Char_Array (1 .. Len);
    end record;
 
    ------------
@@ -53,8 +68,10 @@ private
    ----------
 
    function To_C (S : String) return C_String is
-     (Len  => S'Length + 1, -- For the null terminator
-      Cstr => C.To_C (S));
+     (Limited_Controlled with
+      Len   => S'Length + 1, -- For the null terminator
+      Cstr  => C.To_C (S),
+      Owned => False);
 
    type Char_Access is access constant C.Char;
 
@@ -92,6 +109,6 @@ private
      Ada.Unchecked_Conversion (Ada_Char_Access, CS.Chars_Ptr);
 
    function Unchecked_To_Ptr (Str : access Character) return CS.Chars_Ptr
-   is (Ada_Char_To_Chars_Ptr (Str));
+   is (Ada_Char_To_Chars_Ptr (Ada_Char_Access (Str)));
 
 end C_Strings;
