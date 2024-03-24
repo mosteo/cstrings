@@ -13,6 +13,7 @@ package C_Strings with Preelaborate is
    -- There are a few extra subprograms to work in the C -> Ada directions too,
    --   but those are not the main purpose of the library.
 
+   package C  renames Interfaces.C;
    package CS renames Interfaces.C.Strings;
 
    subtype Chars_Ptr is CS.Chars_Ptr;
@@ -44,8 +45,6 @@ package C_Strings with Preelaborate is
 private
 
    use Ada.Finalization;
-
-   package C  renames Interfaces.C;
 
    use all type C.Size_T;
    use all type CS.Chars_Ptr;
