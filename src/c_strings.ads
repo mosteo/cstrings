@@ -22,9 +22,16 @@ package C_Strings with Preelaborate is
 
    type C_String (<>) is tagged limited private;
 
+   function Size   (This : C_String) return Natural;
+   function C_Size (This : C_String) return C.Size_T;
+   --  Total reserved space, not the logical length with or without any final \0
+
    function To_Ada (C : C_String) return String;
 
    function To_C (S : String) return C_String;
+
+   function Buffer (Length : Positive) return C_String;
+   --  Allocate an uninitialized buffer to e.g. retrieve strings from C side
 
    function Unchecked_To_Ptr (Str : access Character) return CS.Chars_Ptr;
    --  Direct cast. No copy, no nul appended, no nothing! You must know what
@@ -55,6 +62,18 @@ private
       Cstr  : aliased C.Char_Array (1 .. Len);
    end record;
 
+   ----------
+   -- Size --
+   ----------
+
+   function Size   (This : C_String) return Natural is (Natural (This.Len));
+
+   ------------
+   -- C_Size --
+   ------------
+
+   function C_Size (This : C_String) return C.Size_T is (This.Len);
+
    ------------
    -- To_Ada --
    ------------
@@ -70,6 +89,16 @@ private
      (Limited_Controlled with
       Len   => S'Length + 1, -- For the null terminator
       Cstr  => C.To_C (S),
+      Owned => False);
+
+   ------------
+   -- Buffer --
+   ------------
+
+   function Buffer (Length : Positive) return C_String is
+     (Limited_Controlled with
+      Len   => C.Size_T (Length),
+      Cstr  => <>,
       Owned => False);
 
    type Char_Access is access constant C.Char;
